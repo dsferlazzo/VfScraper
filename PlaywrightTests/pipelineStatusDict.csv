@@ -1,0 +1,10 @@
+Pipeline,Run Status
+Accruals - Refresh Accruals within Reporting,Failed
+Claim Inbound Import & Process,Mai Eseguita
+Claims- Credit note generation,Successful
+Claims - Reporting Update,Successful
+Demand - Delivered Forecast - Load forecast from delivered baseline,Successful
+Demand - Export forecast,Successful
+Demand - Longterm - Load baseline from delivered file,Mai Eseguita
+Demand - PLC Integration - Refresh Demand with PLC,Mai Eseguita
+Demand - Refresh module Reporting,Failed
