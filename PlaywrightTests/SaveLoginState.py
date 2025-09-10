@@ -1,5 +1,6 @@
 from playwright.sync_api import sync_playwright
 
+#SCRIPT PER SALVARE LO STATO DEL LOGIN IN 'state.json', IN MODO DA POTER ESSERE UTILIZZATO NEGLI ALTRI SCRIPT
 with sync_playwright() as p:
     browser = p.chromium.launch(executable_path="C:/Program Files/Google/Chrome/Application/chrome.exe",headless=False)  # headless=False = mostra il browser
 
