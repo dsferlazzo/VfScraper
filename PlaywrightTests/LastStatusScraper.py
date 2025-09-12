@@ -1,5 +1,13 @@
 from playwright.sync_api import sync_playwright
 import csv
+import json
+import argparse
+
+#PER GESTIRE IL CODICE DA RIGA DI COMANDO
+parser = argparse.ArgumentParser(description='Bifrost pipeline status extractor automation script')
+parser.add_argument("--filter", type=str, help="Filter the pipelines for status = enabled? (Y/N)", default = "N")   #PARAMETRO INSERIBILE ALL'INTERNO DELLA RIGA DI COMANDO
+parser.add_argument("--fileType", type=str, help="File type of the output (csv/json)", default = "csv")   #PARAMETRO INSERIBILE ALL'INTERNO DELLA RIGA DI COMANDO
+args = parser.parse_args()
 
 def getStatusBoxPosX():    #FUNZIONE DA RUNNARE QUANDO CAMBIO PAGINA. PER TROVARE LA PosX DELLE BOX
     xPosArray = []
@@ -32,7 +40,7 @@ def getStatusText(posX, posY):  #DATA LA POSIZIONE DELLO STATUS DELLA PIPELINE, 
 
 def saveDictAsCSV(dictToSave, fileName):    #SALVA IL CONTENUTO DEL DIZIONARIO IN UN FILE CSV
     with open(fileName, mode="w", newline="", encoding="utf-8") as csvfile:
-        writer = csv.writer(csvfile)
+        writer = csv.writer(csvfile, delimiter=";")
 
         #SCRIVO LE INTESTAZIONI
         writer.writerow(["Pipeline", "Run Status"])
@@ -40,7 +48,12 @@ def saveDictAsCSV(dictToSave, fileName):    #SALVA IL CONTENUTO DEL DIZIONARIO I
         #INSERISCO I DATI DEL DICT NEL FILE
         for pipeline, status in dictToSave.items():
             writer.writerow([pipeline, status])
-        print("File salvato come " + str(fileName))
+        print("File saved as " + str(fileName))
+
+def saveDictAsJson(dictToSave, fileName):   #SALVA IL CONTENUTO DEL DIZIONARIO IN UN FILE JSON
+    with open(fileName, "w", encoding="utf-8") as f:
+        json.dump(dictToSave, f, indent=4, ensure_ascii=False)
+        print("File saved as " + str(fileName))
 
 def filterStatusEnabled():  #FUNZIONE CHE FILTRA LE PIPELINE PER Pipeline Status = Enabled
     # CLICCO SUL PULSANTE DEI FILTRI
@@ -56,9 +69,9 @@ def filterStatusEnabled():  #FUNZIONE CHE FILTRA LE PIPELINE PER Pipeline Status
     page.wait_for_timeout(500)
     page.mouse.click(986, 185)
     page.wait_for_timeout(500)
-    page.mouse.click(1545, 368)  # ESCO DALLA SCHERMATA DEL FILTRO
+    page.click("text=Apply")    #ESCO DALLA SCHERMATA DEL FILTRO
 
-    page.wait_for_timeout(1000)
+    page.wait_for_timeout(1000) #ASPETTO IL RICARICAMENTO DELLA PAGINA
 
 
 validBifrostClasses = [".bifrostcss-hBAxAh",".bifrostcss-dSdRKl",".bifrostcss-fuPzxl"]    #LISTA DI TUTTE LE CLASSI HTML DEGLI STATI DI BIFROST
@@ -67,13 +80,21 @@ pipelineStatusDict = {}
 with sync_playwright() as p:
     # Carica lo stato salvato
     browser = p.chromium.launch(executable_path="C:/Program Files/Google/Chrome/Application/chrome.exe", headless=False)  # headless=False = mostra il browser
-    context = browser.new_context(storage_state="state.json")
+    context = browser.new_context(storage_state="state.json", device_scale_factor=1)
     page = context.new_page()
     page.set_viewport_size({"width": 1600, "height": 1200})
+
     page.goto("https://app.eu.visualfabriq.com/bifrost/nttdata/pipelines")
 
     page.wait_for_timeout(10000)
-    #filterStatusEnabled()
+    '''
+    filterFlag = input("Filter pipelines for status = enabled(Y/N)? ")
+    if filterFlag.upper() == "Y":
+        filterStatusEnabled()
+    '''
+    if args.filter.upper() == "Y":     #FILTRO TRAMITE IL PARAMETRO PASSATO NELLA RIGA DI COMANDO
+        filterStatusEnabled()
+
     exitLoop = False    #FLAG PER USCIRE DAL WHILE LOOP
     while(not exitLoop):
         elements = page.locator(".bifrostcss-eXwpzm.undefined") #TROVO TUTTI GLI ELEMENTI PIPELINE
@@ -84,7 +105,7 @@ with sync_playwright() as p:
             break
 
         count = elements.count()
-        print("Elementi trovati " + str(count)) #DEBUGGING
+        print("Pipelines found: " + str(count)) #DEBUGGING
 
         statusPosX = getStatusBoxPosX() #SALVO DOPO IL CARICAMENTO DELLA PAGINA LA PosX DEI PIPELINE STATUS
         if statusPosX == 0: #S
@@ -102,25 +123,23 @@ with sync_playwright() as p:
             if statusText == "Action":  #PER GESTIRE IL FATTO CHE IL SISTEMA NON RIESCE A EVIDENZIARE DUE PAROLE
                 statusText = "No Action"
 
-            if statusText not in validStatuses:
+            if statusText not in validStatuses: #PER GESTIRE QUANDO VIENE SELEZIONATO IL TESTO NEI COMMENTI SENZA TROVARE DEL TESTO PER NEVER EXECUTED
                 statusText = "Never Executed"
 
             pipelineName = element.inner_text()
-            '''
-            if pipelineName in pipelineStatusDict:  #SE HO GIA SALVATO LA PIPELINE NEL DICT, LA PAGINA NON E STATA RICARICATA, POICHE IL PULSANTE ERA DISATTIVATO
-                exitLoop = True
-                break
-            '''
-            print("Pipeline: " + str(pipelineName) + " *** Esito: " + str(statusText.strip()))  #DEBUGGING
+
+            print("Pipeline: " + str(pipelineName) + " *** Status: " + str(statusText.strip()))  #DEBUGGING
             pipelineStatusDict[pipelineName] = statusText   #SALVO ALL'INTERNO DI UN DIZIONARIO, PER INSERIRLO SUCCESSIVAMENTE NEL FILE CSV DI OUTPUT
 
         page.click("text=Next")
         page.wait_for_timeout(2000) #ASPETTO IL CARICAMENTO DELLA NUOVA PAGINA
 
-    saveDictAsCSV(pipelineStatusDict, "pipelineStatus.csv")
+    if args.fileType.lower() == "csv":
+        saveDictAsCSV(pipelineStatusDict, "pipelineStatus.csv")
+    else: saveDictAsJson(pipelineStatusDict, "pipelineStatus.json")
 
     #DEBUGGING
-    page.screenshot()
-    page.wait_for_timeout(4000)
+    #page.screenshot()
+    page.wait_for_timeout(2000)
 
     browser.close()

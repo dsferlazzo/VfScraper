@@ -8,10 +8,9 @@ with sync_playwright() as p:
     page.set_viewport_size({"width": 1600, "height": 1200})
     page.goto("https://app.eu.visualfabriq.com/bifrost/nttdata/pipelines")
 
-
     #CLICCO SUL PULSANTE DEI FILTRI
     page.click("text=Filters")
-    
+
     #APPLICO IL FILTRO 'Pipeline Status' = 'True'
     page.wait_for_timeout(500)
     page.mouse.click(670,144)
@@ -22,12 +21,9 @@ with sync_playwright() as p:
     page.wait_for_timeout(500)
     page.mouse.click(986, 185)
     page.wait_for_timeout(500)
-    page.click("text=Apply")    #ESCO DALLA SCHERMATA DEL FILTRO
+    page.mouse.click(1545, 368)  #ESCO DALLA SCHERMATA DEL FILTRO
 
     page.wait_for_timeout(1000)
-
-
-    input("Clicca invio")
 
     page.screenshot(path="screenshot.png")
     browser.close()
