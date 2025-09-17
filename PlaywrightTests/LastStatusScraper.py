@@ -5,7 +5,7 @@ import argparse
 
 #PER GESTIRE IL CODICE DA RIGA DI COMANDO
 parser = argparse.ArgumentParser(description='Bifrost pipeline status extractor automation script')
-parser.add_argument("--filter", type=str, help="Filter the pipelines for status = enabled? (Y/N)", default = "N")   #PARAMETRO INSERIBILE ALL'INTERNO DELLA RIGA DI COMANDO
+parser.add_argument("--filter", type=str, help="Filter the pipelines for status = enabled? (Y/N)", default = "Y")   #PARAMETRO INSERIBILE ALL'INTERNO DELLA RIGA DI COMANDO
 parser.add_argument("--fileType", type=str, help="File type of the output (csv/json)", default = "csv")   #PARAMETRO INSERIBILE ALL'INTERNO DELLA RIGA DI COMANDO
 args = parser.parse_args()
 
@@ -61,15 +61,15 @@ def filterStatusEnabled():  #FUNZIONE CHE FILTRA LE PIPELINE PER Pipeline Status
 
     # APPLICO IL FILTRO 'Pipeline Status' = 'True'
     page.wait_for_timeout(500)
-    page.mouse.click(670, 144)
+    page.locator(".bifrostcss-JgNqY").nth(2).click()  # CLICCO SUL PULSANTE DI SELEZIONE TIPO DI FILTRO
     page.wait_for_timeout(500)
-    page.mouse.click(680, 251)
+    page.locator(".bifrostcss-eGauau").nth(2).click()  # CLICCO SUL TIPO DI FILTRO (Pipeline Status)
     page.wait_for_timeout(500)
-    page.mouse.click(1030, 143)
+    page.locator(".bifrostcss-JgNqY").nth(3).click()  # CLICCO SULLA SBARRA DI SELEZIONE STATO
     page.wait_for_timeout(500)
-    page.mouse.click(986, 185)
+    page.locator(".bifrostcss-eGauau").nth(0).click()  # SELEZIONO LO STATO Enabled
     page.wait_for_timeout(500)
-    page.click("text=Apply")    #ESCO DALLA SCHERMATA DEL FILTRO
+    page.click("text=Apply")  # APPLICO IL FILTRO SELEZIONATO
 
     page.wait_for_timeout(1000) #ASPETTO IL RICARICAMENTO DELLA PAGINA
 
